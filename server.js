@@ -37,15 +37,33 @@ app.get("/users/nearby", (req, res) => {
   console.log("currentLongitude:", currentLongitude);
   console.log("radiusInKm:", radiusInKm);
 
+  //   const query = `
+  //         SELECT idUsu, nombreUsu,
+  //             ST_X(ubiUsu) AS latitude,
+  //             ST_Y(ubiUsu) AS longitude,
+  //             ST_DISTANCE_SPHERE(ubiUsu, ST_GeomFromText('POINT(${currentLongitude} ${currentLatitude})', 4326))/1000 AS distance
+  //         FROM USUARIO
+  //         HAVING distance <= ${radiusInKm}
+  //     `;
+
   const query = `
-        SELECT idUsu, nombreUsu, 
-            ST_X(ubiUsu) AS latitude, 
-            ST_Y(ubiUsu) AS longitude,
-            ST_DISTANCE_SPHERE(ubiUsu, ST_GeomFromText('POINT(${currentLongitude} ${currentLatitude})', 4326))/1000 AS distance,
-            imageUrl
-        FROM USUARIO
-        HAVING distance <= ${radiusInKm}
-    `;
+    SELECT 
+        U.idUsu, 
+        U.nombreUsu, 
+        ST_X(U.ubiUsu) AS latitude, 
+        ST_Y(U.ubiUsu) AS longitude,
+        ST_DISTANCE_SPHERE(U.ubiUsu, ST_GeomFromText('POINT(${currentLongitude} ${currentLatitude})', 4326))/1000 AS distance,
+        M.nombre AS nombreMascota,
+        M.edad AS edadMascota,
+        M.sexo AS sexoMascota,
+        M.foto AS fotoMascota,
+        M.descripcion AS descripcionMascota,
+        M.relacionHumanos AS relacionHumanosMascota,
+        M.relacionMascotas AS relacionMascotasMascota
+    FROM USUARIO U
+    LEFT JOIN MASCOTA M ON U.idUsu = M.idHumano
+    HAVING distance <= ${radiusInKm}
+  `;
 
   console.log(query);
 
