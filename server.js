@@ -32,40 +32,40 @@ app.get("/users/nearby", (req, res) => {
   const currentLatitude = parseFloat(req.query.latitude);
   const currentLongitude = parseFloat(req.query.longitude);
   const radiusInKm = parseFloat(req.query.radius) * 10 || 10.0;
+  const idUsu = req.query.idUsu;
 
   console.log("currentLatitude:", currentLatitude);
   console.log("currentLongitude:", currentLongitude);
   console.log("radiusInKm:", radiusInKm);
-
-  //   const query = `
-  //         SELECT idUsu, nombreUsu,
-  //             ST_X(ubiUsu) AS latitude,
-  //             ST_Y(ubiUsu) AS longitude,
-  //             ST_DISTANCE_SPHERE(ubiUsu, ST_GeomFromText('POINT(${currentLongitude} ${currentLatitude})', 4326))/1000 AS distance
-  //         FROM USUARIO
-  //         HAVING distance <= ${radiusInKm}
-  //     `;
+  console.log("idUsu:", idUsu);
 
   const query = `
     SELECT 
         U.idUsu, 
         U.nombreUsu, 
+        U.apellidosUsu,
+        U.mailUsu,
+        U.pass,
+        U.genero,
+        U.edadUsu,
+        U.ubiUsu,
         ST_X(U.ubiUsu) AS latitude, 
         ST_Y(U.ubiUsu) AS longitude,
         ST_DISTANCE_SPHERE(U.ubiUsu, ST_GeomFromText('POINT(${currentLongitude} ${currentLatitude})', 4326))/1000 AS distance,
-        M.nombre AS nombreMascota,
-        M.edad AS edadMascota,
-        M.sexo AS sexoMascota,
-        M.foto AS fotoMascota,
-        M.descripcion AS descripcionMascota,
-        M.relacionHumanos AS relacionHumanosMascota,
-        M.relacionMascotas AS relacionMascotasMascota
+        M.mascotaId,
+        M.nombre, 
+        M.edad,
+        M.sexo, 
+        M.foto, 
+        M.descripcion, 
+        M.relacionHumanos, 
+        M.relacionMascotas,
+        M.raza
     FROM USUARIO U
     LEFT JOIN MASCOTA M ON U.idUsu = M.idHumano
+    WHERE U.idUsu <> ${idUsu}
     HAVING distance <= ${radiusInKm}
   `;
-
-  console.log(query);
 
   db.query(query, (err, results) => {
     if (err) {
@@ -124,6 +124,7 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
     console.log("Faltan datos obligatorios");
     return res.status(400).json({ error: "Faltan datos obligatorios" });
   }
+  const passCrypto = CryptoJS.MD5(pass).toString();
 
   const location = `POINT(${longitude} ${latitude})`;
   const imageUrl = req.file ? `/uploads/${req.file.filename}` : null; // Ruta de la imagen en el servidor
@@ -132,9 +133,9 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
   console.log("Imagen:", imageUrl);
 
   const query = `
-    INSERT INTO USUARIO (nombreUsu, ubiUsu, apellidosUsu, mailUsu, pass, genero, edad) VALUES (?, ST_GeomFromText(?), (?), (?), ?, ?, ?)
+    INSERT INTO USUARIO (nombreUsu, ubiUsu, apellidosUsu, mailUsu, pass, genero, edadUsu) VALUES (?, ST_GeomFromText(?), (?), (?), ?, ?, ?)
 `;
-  const values = [name, location, surname, mailUsu, pass, gender, age];
+  const values = [name, location, surname, mailUsu, passCrypto, gender, age];
 
   db.query(query, values, (err, result) => {
     if (err) {
@@ -183,14 +184,13 @@ app.post("/login", (req, res) => {
     console.log("Faltan datos obligatorios");
     return res.status(400).json({ error: "Faltan datos obligatorios" });
   } else {
-    const sql = `SELECT * FROM USUARIO WHERE mailUsu = ?`;
+    const sql = `SELECT USUARIO.*, MASCOTA.* FROM USUARIO LEFT JOIN MASCOTA ON USUARIO.idUsu = MASCOTA.idHumano WHERE USUARIO.mailUsu = ? ;`;
 
     db.query(sql, mailUsu, (err, result) => {
       if (err) {
         console.error("Error en la consulta de inserción:", err);
         res.status(500).json({ error: "Error al agregar el usuario" });
       } else {
-        console.log(result);
         let pass = CryptoJS.MD5(passUsu).toString();
         console.log("Introducida: ", pass);
         console.log("Correcta: ", result[0].pass);
@@ -198,7 +198,27 @@ app.post("/login", (req, res) => {
           console.log("Usuario o contraseña incorrectos");
           res.status(400).json({ error: "Usuario o contraseña incorrectos" });
         } else {
-          res.json({ result });
+          console.log("Usuario logueado correctamente");
+          console.log("UsuarioCompleto",result);
+          const ubiUsu = result[0].ubiUsu
+          const idUsu = result[0].idUsu
+          const nombreUsu = result[0].nombreUsu
+          const apellidosUsu = result[0].apellidosUsu
+          const mailUsu = result[0].mailUsu
+          const pass = result[0].pass
+          const genero = result[0].genero
+          const edadUsu = result[0].edadUsu
+          const mascotaId = result[0].mascotaId
+          const nombre = result[0].nombre
+          const edad = result[0].edad
+          const sexo = result[0].sexo
+          const foto = result[0].foto
+          const descripcion = result[0].descripcion
+          const relacionHumanos = result[0].relacionHumanos
+          const relacionMascotas = result[0].relacionMascotas
+          const idHumano = result[0].idHumano
+          const raza = result[0].raza
+          res.json({ idUsu, ubiUsu, nombreUsu, apellidosUsu, mailUsu, pass, genero , edadUsu, mascotaId, nombre, edad, sexo, foto, descripcion, relacionHumanos, relacionMascotas, idHumano, raza});
         }
       }
     });
