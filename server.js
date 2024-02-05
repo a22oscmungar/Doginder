@@ -2,10 +2,12 @@ const express = require("express");
 const mysql = require("mysql2");
 const multer = require("multer");
 const path = require("path");
+const socketIo = require("socket.io");
 
 const app = express();
 const port = 3745;
 const CryptoJS = require("crypto-js");
+const { connect } = require("http2");
 
 const db = mysql.createPool({
   host: "dam.inspedralbes.cat",
@@ -64,8 +66,14 @@ app.get("/users/nearby", (req, res) => {
     FROM USUARIO U
     LEFT JOIN MASCOTA M ON U.idUsu = M.idHumano
     WHERE U.idUsu <> ${idUsu}
-    HAVING distance <= ${radiusInKm}
-  `;
+    AND NOT EXISTS (
+    SELECT 1 FROM INTERACCIONES 
+    WHERE (idUsu1 = ${idUsu} AND idUsu2 = U.idUsu)
+       OR (idUsu1 = ${idUsu} AND idUsu2 = U.idUsu AND EsMatch = 1)
+       OR (idUsu1 = U.idUsu AND idUsu2 = ${idUsu} AND EsMatch = 1)
+  )
+  HAVING distance <= ${radiusInKm}
+`;
 
   db.query(query, (err, results) => {
     if (err) {
@@ -169,6 +177,25 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
   });
 });
 
+//ruta para obtener los matches de un usuario
+app.get("/matches", (req, res) =>{
+  const idUsu = req.query.idUsu;
+
+  const sql = `SELECT * FROM USUARIO U
+  JOIN INTERACCIONES I ON (U.idUsu = I.idUsu1 OR U.idUsu = I.idUsu2)
+  WHERE (I.idUsu1 = ${idUsu} OR I.idUsu2 = ${idUsu}) AND I.EsMatch = 1 AND U.idUsu <> ${idUsu}`;
+
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("Error en la consulta de inserción:", err);
+      res.status(500).json({ error: "Error al agregar el usuario" });
+    } else {
+      console.log(result);
+      res.json(result);
+    }
+  });
+})
+
 app.get("/pass", (req, res) => {
   const pass = req.body.pass;
 
@@ -199,26 +226,45 @@ app.post("/login", (req, res) => {
           res.status(400).json({ error: "Usuario o contraseña incorrectos" });
         } else {
           console.log("Usuario logueado correctamente");
-          console.log("UsuarioCompleto",result);
-          const ubiUsu = result[0].ubiUsu
-          const idUsu = result[0].idUsu
-          const nombreUsu = result[0].nombreUsu
-          const apellidosUsu = result[0].apellidosUsu
-          const mailUsu = result[0].mailUsu
-          const pass = result[0].pass
-          const genero = result[0].genero
-          const edadUsu = result[0].edadUsu
-          const mascotaId = result[0].mascotaId
-          const nombre = result[0].nombre
-          const edad = result[0].edad
-          const sexo = result[0].sexo
-          const foto = result[0].foto
-          const descripcion = result[0].descripcion
-          const relacionHumanos = result[0].relacionHumanos
-          const relacionMascotas = result[0].relacionMascotas
-          const idHumano = result[0].idHumano
-          const raza = result[0].raza
-          res.json({ idUsu, ubiUsu, nombreUsu, apellidosUsu, mailUsu, pass, genero , edadUsu, mascotaId, nombre, edad, sexo, foto, descripcion, relacionHumanos, relacionMascotas, idHumano, raza});
+          console.log("UsuarioCompleto", result);
+          const ubiUsu = result[0].ubiUsu;
+          const idUsu = result[0].idUsu;
+          const nombreUsu = result[0].nombreUsu;
+          const apellidosUsu = result[0].apellidosUsu;
+          const mailUsu = result[0].mailUsu;
+          const pass = result[0].pass;
+          const genero = result[0].genero;
+          const edadUsu = result[0].edadUsu;
+          const mascotaId = result[0].mascotaId;
+          const nombre = result[0].nombre;
+          const edad = result[0].edad;
+          const sexo = result[0].sexo;
+          const foto = result[0].foto;
+          const descripcion = result[0].descripcion;
+          const relacionHumanos = result[0].relacionHumanos;
+          const relacionMascotas = result[0].relacionMascotas;
+          const idHumano = result[0].idHumano;
+          const raza = result[0].raza;
+          res.json({
+            idUsu,
+            ubiUsu,
+            nombreUsu,
+            apellidosUsu,
+            mailUsu,
+            pass,
+            genero,
+            edadUsu,
+            mascotaId,
+            nombre,
+            edad,
+            sexo,
+            foto,
+            descripcion,
+            relacionHumanos,
+            relacionMascotas,
+            idHumano,
+            raza,
+          });
         }
       }
     });
@@ -251,6 +297,35 @@ app.get("/users/validateMail", (req, res) => {
       }
     });
   }
+});
+
+//ruta para los likes o dislikes
+app.get("/interaccion", (req, res) => {
+  let { idUsu1, idUsu2, tipoInteraccion } = req.query;
+
+  // Asegurar que idUsu1 siempre sea menor o igual que idUsu2
+  [idUsu1, idUsu2] = [Math.min(idUsu1, idUsu2), Math.max(idUsu1, idUsu2)];
+
+  console.log("idUsu1: ", idUsu1);
+  console.log("idUsu2: ", idUsu2);
+  console.log("tipoInteraccion: ", tipoInteraccion);
+
+  const sql = `
+    INSERT INTO INTERACCIONES (idUsu1, idUsu2, tipoInteraccion)
+    VALUES (?, ?, ?)
+    ON DUPLICATE KEY UPDATE 
+      EsMatch = IF(tipoInteraccion = 'LIKE' AND EsMatch = 0, 1, EsMatch);
+  `;
+
+  db.query(sql, [idUsu1, idUsu2, tipoInteraccion], (err, result) => {
+    if (err) {
+      console.error("Error en la consulta de inserción:", err);
+      return res.status(500).json({ error: "Error al agregar el usuario" });
+    } else {
+      console.log(result);
+      return res.json({ result });
+    }
+  });
 });
 
 app.post("/setPass", (req, res) => {
