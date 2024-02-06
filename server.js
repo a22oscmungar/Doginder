@@ -2,12 +2,20 @@ const express = require("express");
 const mysql = require("mysql2");
 const multer = require("multer");
 const path = require("path");
-const socketIo = require("socket.io");
-
+const http = require("http");
 const app = express();
 const port = 3745;
 const CryptoJS = require("crypto-js");
 const { connect } = require("http2");
+const server = http.createServer(app);
+const { Server } = require("socket.io");
+
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"],
+  },
+});
 
 const db = mysql.createPool({
   host: "dam.inspedralbes.cat",
@@ -30,16 +38,31 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
+io.on("connection", (socket) => {
+  console.log("Usuario conectado: ", socket.id);
+  
+  socket.on("match", (data) => {
+    console.log("Nuevo match:", data);
+
+    
+    //io.emit("match", data);
+  });
+  socket.on("disconnect", () => {
+    console.log("Usuario desconectado: ", socket.id);
+  });
+});
+
+// Ruta para obtener todos los usuarios dentro de un rango de distancia
 app.get("/users/nearby", (req, res) => {
   const currentLatitude = parseFloat(req.query.latitude);
   const currentLongitude = parseFloat(req.query.longitude);
   const radiusInKm = parseFloat(req.query.radius) * 10 || 10.0;
   const idUsu = req.query.idUsu;
 
-  console.log("currentLatitude:", currentLatitude);
-  console.log("currentLongitude:", currentLongitude);
-  console.log("radiusInKm:", radiusInKm);
-  console.log("idUsu:", idUsu);
+  // console.log("currentLatitude:", currentLatitude);
+  // console.log("currentLongitude:", currentLongitude);
+  // console.log("radiusInKm:", radiusInKm);
+  // console.log("idUsu:", idUsu);
 
   const query = `
     SELECT 
@@ -82,7 +105,7 @@ app.get("/users/nearby", (req, res) => {
         .status(500)
         .json({ error: "Error en la consulta de usuarios cercanos" });
     } else {
-      console.log(results);
+      //console.log(results);
       res.json(results);
     }
   });
@@ -181,7 +204,7 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
 app.get("/matches", (req, res) =>{
   const idUsu = req.query.idUsu;
 
-  const sql = `SELECT * FROM USUARIO U
+  const sql = `SELECT U.*, M.* FROM USUARIO U JOIN MASCOTA M ON U.idUsu = M.idHumano
   JOIN INTERACCIONES I ON (U.idUsu = I.idUsu1 OR U.idUsu = I.idUsu2)
   WHERE (I.idUsu1 = ${idUsu} OR I.idUsu2 = ${idUsu}) AND I.EsMatch = 1 AND U.idUsu <> ${idUsu}`;
 
@@ -204,8 +227,8 @@ app.get("/pass", (req, res) => {
 
 app.post("/login", (req, res) => {
   const { mailUsu, passUsu } = req.body;
-  console.log("mailUsu: ", mailUsu);
-  console.log("passUsu: ", passUsu);
+  // console.log("mailUsu: ", mailUsu);
+  // console.log("passUsu: ", passUsu);
 
   if (!mailUsu || !passUsu) {
     console.log("Faltan datos obligatorios");
@@ -219,14 +242,14 @@ app.post("/login", (req, res) => {
         res.status(500).json({ error: "Error al agregar el usuario" });
       } else {
         let pass = CryptoJS.MD5(passUsu).toString();
-        console.log("Introducida: ", pass);
-        console.log("Correcta: ", result[0].pass);
+        //console.log("Introducida: ", pass);
+        //console.log("Correcta: ", result[0].pass);
         if (res == 0 || result[0].pass != pass) {
-          console.log("Usuario o contraseña incorrectos");
+          //console.log("Usuario o contraseña incorrectos");
           res.status(400).json({ error: "Usuario o contraseña incorrectos" });
         } else {
-          console.log("Usuario logueado correctamente");
-          console.log("UsuarioCompleto", result);
+          //console.log("Usuario logueado correctamente");
+          //console.log("UsuarioCompleto", result);
           const ubiUsu = result[0].ubiUsu;
           const idUsu = result[0].idUsu;
           const nombreUsu = result[0].nombreUsu;
@@ -365,6 +388,6 @@ app.get("/getPass", (req, res) => {
   });
 });
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Servidor en ejecución en http://localhost:${port}`);
 });
