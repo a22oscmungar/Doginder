@@ -71,6 +71,13 @@ io.on("connection", (socket) => {
   });
 });
 
+function emitir_evento(socketId, tipoInteraccion){
+  console.log("se ha llamado a emitir_evento");
+  io.to(socketId).emit(tipoInteraccion);
+}
+
+global.emitir_evento = emitir_evento;
+
 // Ruta para obtener todos los usuarios dentro de un rango de distancia
 app.get("/users/nearby", (req, res) => {
   const currentLatitude = parseFloat(req.query.latitude);
@@ -390,16 +397,59 @@ app.get("/interaccion", (req, res) => {
       EsMatch = IF(tipoInteraccion = 'LIKE' AND EsMatch = 0, 1, EsMatch);
   `;
 
+  const selectEsMatchSQL = `
+  SELECT EsMatch
+  FROM INTERACCIONES
+  WHERE idUsu1 = ? AND idUsu2 = ?;
+`;
+
   db.query(sql, [idUsu1, idUsu2, tipoInteraccion], (err, result) => {
     if (err) {
       console.error("Error en la consulta de inserción:", err);
       return res.status(500).json({ error: "Error al agregar el usuario" });
     } else {
-      console.log(result);
+      
+      //revisar si ha sido match
+      db.query(selectEsMatchSQL, [idUsu1, idUsu2], (err, rows)=>{
+        if(err){
+          console.error("Error en la consulta de inserción:", err);
+          return res.status(500).json({ error: "Error al agregar el usuario" });
+        }
+        if (rows.length > 0){
+          console.log(rows[0]);
+          const esMatchActualizado = rows[0].EsMatch;
+          if(esMatchActualizado === 1){
+            console.log("Match");
+            const socketUsu1 = socketUsuario(idUsu1);
+            const socketUsu2 = socketUsuario(idUsu2);
+
+            io.to(socketUsu1).emit("match");
+            io.to(socketUsu2).emit("match");
+          }
+
+        }
+      })
       return res.json({ result });
     }
   });
 });
+
+function socketUsuario(idUsu){
+  const sql = `SELECT socketId FROM SOCKETSID WHERE idUsu = ?`;
+  db.query(sql, idUsu, (err, result) => {
+    if (err) {
+      console.error("Error en la consulta:", err);
+      return res.status(500).json({ error: "Error" });
+    } else {
+      if (result.length === 0) {
+        console.log("Usuario no encontrado");
+      } else {
+        console.log("SocketId: ", result[0].socketId);
+        return result[0].socketId;
+      }
+    }
+  });
+}
 
 app.post("/setPass", (req, res) => {
   const newPass = req.body.newPass;
