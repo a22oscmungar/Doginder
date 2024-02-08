@@ -42,10 +42,29 @@ io.on("connection", (socket) => {
   console.log("Usuario conectado: ", socket.id);
   
   socket.on("match", (data) => {
-    console.log("Nuevo match:", data);
-
-    
+    console.log("Nuevo match:", data);    
     //io.emit("match", data);
+    });
+  socket.on("nuevoMensaje", (mensaje, idUsu1, idUsu2) => {
+    console.log("Nuevo mensaje:", mensaje);
+    console.log("idUsu1:", idUsu1);
+    console.log("idUsu2:", idUsu2);
+
+    const sql = `SELECT socketId FROM SOCKETSID WHERE idUsu = ?`;
+    db.query(sql, idUsu2, (err, result) => {
+      if (err) {
+        console.error("Error en la consulta:", err);
+        return res.status(500).json({ error: "Error" });
+      } else {
+        if (result.length === 0) {
+          console.log("Usuario no encontrado");
+        } else {
+          console.log("SocketId: ", result[0].socketId);
+          console.log("Mensaje: ", mensaje , " idUsu1: ", idUsu1, " idUsu2: ", idUsu2);
+          io.to(result[0].socketId).emit("nuevoMensaje", mensaje, idUsu1, idUsu2);
+        }
+      }
+    });
   });
   socket.on("disconnect", () => {
     console.log("Usuario desconectado: ", socket.id);
@@ -193,11 +212,43 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
           console.error("Error en la consulta de inserción:", err);
           res.status(500).json({ error: "Error al agregar el usuario" });
         } else {
+
+          const sql3 = `INSERT INTO SOCKETSID(idUsu) VALUES (?)`;
+          db.query(sql3, idHumano, (err, result) => {
+            if (err) {
+              console.error("Error en la consulta de inserción:", err);
+              res.status(500).json({ error: "Error al agregar el usuario" });
+            } else {
+              console.log("añadido al socket");
+            }
+          },);
           res.json({ success: true, userId: result.insertId });
         }
       });
     }
   });
+});
+
+// Ruta para update de la tabla sockets
+app.post("/socketUpdate", (req, res) =>{
+const idUsu = req.query.idUsu;
+const socketID = req.query.socketID;
+
+console.log("idUsu: ", idUsu);
+console.log("socketID: ", socketID);
+
+const sql = `UPDATE SOCKETSID SET socketId = ? WHERE idUsu = ?`;
+
+db.query(sql, [socketID, idUsu], (err, result) => {
+  if (err) {
+    console.error("Error en la consulta de inserción:", err);
+    res.status(500).json({ error: "Error al agregar el usuario" });
+  } else {
+    console.log(result);
+    res.json(result);
+  }
+});
+
 });
 
 //ruta para obtener los matches de un usuario
@@ -213,7 +264,6 @@ app.get("/matches", (req, res) =>{
       console.error("Error en la consulta de inserción:", err);
       res.status(500).json({ error: "Error al agregar el usuario" });
     } else {
-      console.log(result);
       res.json(result);
     }
   });
