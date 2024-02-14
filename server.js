@@ -40,11 +40,11 @@ const upload = multer({ storage: storage });
 
 io.on("connection", (socket) => {
   console.log("Usuario conectado: ", socket.id);
-  
+
   socket.on("match", (data) => {
-    console.log("Nuevo match:", data);    
+    console.log("Nuevo match:", data);
     //io.emit("match", data);
-    });
+  });
   socket.on("nuevoMensaje", (mensaje, idUsu1, idUsu2) => {
     console.log("Nuevo mensaje:", mensaje);
     console.log("idUsu1:", idUsu1);
@@ -60,8 +60,20 @@ io.on("connection", (socket) => {
           console.log("Usuario no encontrado");
         } else {
           console.log("SocketId: ", result[0].socketId);
-          console.log("Mensaje: ", mensaje , " idUsu1: ", idUsu1, " idUsu2: ", idUsu2);
-          io.to(result[0].socketId).emit("nuevoMensaje", mensaje, idUsu1, idUsu2);
+          console.log(
+            "Mensaje: ",
+            mensaje,
+            " idUsu1: ",
+            idUsu1,
+            " idUsu2: ",
+            idUsu2
+          );
+          io.to(result[0].socketId).emit(
+            "nuevoMensaje",
+            mensaje,
+            idUsu1,
+            idUsu2
+          );
         }
       }
     });
@@ -71,7 +83,7 @@ io.on("connection", (socket) => {
   });
 });
 
-function emitir_evento(socketId, tipoInteraccion){
+function emitir_evento(socketId, tipoInteraccion) {
   console.log("se ha llamado a emitir_evento");
   io.to(socketId).emit(tipoInteraccion);
 }
@@ -219,7 +231,6 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
           console.error("Error en la consulta de inserción:", err);
           res.status(500).json({ error: "Error al agregar el usuario" });
         } else {
-
           const sql3 = `INSERT INTO SOCKETSID(idUsu) VALUES (?)`;
           db.query(sql3, idHumano, (err, result) => {
             if (err) {
@@ -228,7 +239,7 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
             } else {
               console.log("añadido al socket");
             }
-          },);
+          });
           res.json({ success: true, userId: result.insertId });
         }
       });
@@ -237,29 +248,28 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
 });
 
 // Ruta para update de la tabla sockets
-app.post("/socketUpdate", (req, res) =>{
-const idUsu = req.query.idUsu;
-const socketID = req.query.socketID;
+app.post("/socketUpdate", (req, res) => {
+  const idUsu = req.query.idUsu;
+  const socketID = req.query.socketID;
 
-console.log("idUsu: ", idUsu);
-console.log("socketID: ", socketID);
+  console.log("idUsu: ", idUsu);
+  console.log("socketID: ", socketID);
 
-const sql = `UPDATE SOCKETSID SET socketId = ? WHERE idUsu = ?`;
+  const sql = `UPDATE SOCKETSID SET socketId = ? WHERE idUsu = ?`;
 
-db.query(sql, [socketID, idUsu], (err, result) => {
-  if (err) {
-    console.error("Error en la consulta de inserción:", err);
-    res.status(500).json({ error: "Error al agregar el usuario" });
-  } else {
-    console.log(result);
-    res.json(result);
-  }
-});
-
+  db.query(sql, [socketID, idUsu], (err, result) => {
+    if (err) {
+      console.error("Error en la consulta de inserción:", err);
+      res.status(500).json({ error: "Error al agregar el usuario" });
+    } else {
+      console.log(result);
+      res.json(result);
+    }
+  });
 });
 
 //ruta para obtener los matches de un usuario
-app.get("/matches", (req, res) =>{
+app.get("/matches", (req, res) => {
   const idUsu = req.query.idUsu;
 
   const sql = `SELECT U.*, M.* FROM USUARIO U JOIN MASCOTA M ON U.idUsu = M.idHumano
@@ -274,7 +284,7 @@ app.get("/matches", (req, res) =>{
       res.json(result);
     }
   });
-})
+});
 
 app.get("/pass", (req, res) => {
   const pass = req.body.pass;
@@ -398,56 +408,71 @@ app.get("/interaccion", (req, res) => {
   `;
 
   const selectEsMatchSQL = `
-  SELECT EsMatch
-  FROM INTERACCIONES
-  WHERE idUsu1 = ? AND idUsu2 = ?;
-`;
+    SELECT EsMatch
+    FROM INTERACCIONES
+    WHERE idUsu1 = ? AND idUsu2 = ?;
+  `;
 
   db.query(sql, [idUsu1, idUsu2, tipoInteraccion], (err, result) => {
     if (err) {
       console.error("Error en la consulta de inserción:", err);
       return res.status(500).json({ error: "Error al agregar el usuario" });
-    } else {
-      
-      //revisar si ha sido match
-      db.query(selectEsMatchSQL, [idUsu1, idUsu2], (err, rows)=>{
-        if(err){
-          console.error("Error en la consulta de inserción:", err);
-          return res.status(500).json({ error: "Error al agregar el usuario" });
-        }
-        if (rows.length > 0){
-          console.log(rows[0]);
-          const esMatchActualizado = rows[0].EsMatch;
-          if(esMatchActualizado === 1){
-            console.log("Match");
-            const socketUsu1 = socketUsuario(idUsu1);
-            const socketUsu2 = socketUsuario(idUsu2);
-
-            io.to(socketUsu1).emit("match");
-            io.to(socketUsu2).emit("match");
-          }
-
-        }
-      })
-      return res.json({ result });
     }
+
+    // Revisar si ha sido un "match"
+    db.query(selectEsMatchSQL, [idUsu1, idUsu2], (err, rows) => {
+      if (err) {
+        console.error("Error en la consulta de selección:", err);
+        return res.status(500).json({ error: "Error al verificar el match" });
+      }
+
+      if (rows.length > 0) {
+        console.log(rows[0]);
+        const esMatchActualizado = rows[0].EsMatch;
+
+        // Si hay un cambio de 0 a 1, enviar el evento de socket
+        if (esMatchActualizado === 1) {
+          console.log("Match");
+        
+          // Utiliza Promise.all para esperar las promesas antes de continuar
+          Promise.all([socketUsuario(idUsu1), socketUsuario(idUsu2)])
+            .then(([socketUsu1, socketUsu2]) => {
+              if (socketUsu1 && socketUsu2) {
+                io.to(socketUsu1).emit("match");
+                io.to(socketUsu2).emit("match");
+                console.log("Se ha emitido el evento de match");
+              } else {
+                console.log("No se ha emitido el evento");
+              }
+            })
+            .catch((error) => {
+              console.error("Error al obtener sockets:", error);
+            });
+        }
+      }
+
+      // Respuesta exitosa
+      res.json({ result });
+    });
   });
 });
 
-function socketUsuario(idUsu){
-  const sql = `SELECT socketId FROM SOCKETSID WHERE idUsu = ?`;
-  db.query(sql, idUsu, (err, result) => {
-    if (err) {
-      console.error("Error en la consulta:", err);
-      return res.status(500).json({ error: "Error" });
-    } else {
-      if (result.length === 0) {
-        console.log("Usuario no encontrado");
+function socketUsuario(idUsu) {
+  return new Promise((resolve, reject) => {
+    const sql = `SELECT socketId FROM SOCKETSID WHERE idUsu = ?`;
+    db.query(sql, idUsu, (err, result) => {
+      if (err) {
+        console.error("Error en la consulta:", err);
+        reject(err);
       } else {
-        console.log("SocketId: ", result[0].socketId);
-        return result[0].socketId;
+        if (result.length === 0) {
+          console.log("Usuario no encontrado");
+          resolve(null);
+        } else {
+          resolve(result[0].socketId);
+        }
       }
-    }
+    });
   });
 }
 
