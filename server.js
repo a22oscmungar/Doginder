@@ -45,7 +45,7 @@ io.on("connection", (socket) => {
     console.log("Nuevo match:", data);
     //io.emit("match", data);
   });
-  socket.on("nuevoMensaje", (mensaje, idUsu1, idUsu2) => {
+  socket.on("nuevoMensaje", (mensaje, idUsu1, idUsu2, idUsu) => {
     console.log("Nuevo mensaje:", mensaje);
     console.log("idUsu1:", idUsu1);
     console.log("idUsu2:", idUsu2);
@@ -72,7 +72,8 @@ io.on("connection", (socket) => {
             "nuevoMensaje",
             mensaje,
             idUsu1,
-            idUsu2
+            idUsu2,
+            idUsu
           );
         }
       }
