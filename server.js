@@ -9,6 +9,7 @@ const CryptoJS = require("crypto-js");
 const { connect } = require("http2");
 const server = http.createServer(app);
 const { Server } = require("socket.io");
+const nodemailer = require("nodemailer");
 
 const io = new Server(server, {
   cors: {
@@ -91,6 +92,118 @@ function emitir_evento(socketId, tipoInteraccion) {
 
 global.emitir_evento = emitir_evento;
 
+const transporter = nodemailer.createTransport({
+  host: "smtp.gmail.com",
+  port: 587,
+  secure: false, // Use `true` for port 465, `false` for all other ports
+  auth: {
+    user: "a22oscmungar@inspedralbes.cat",
+    pass: "663626149Oo*",
+  },
+});
+
+// ruta para enviar el mail
+app.post("/sendMail", (req, res) => {
+  const mail = req.body.mail;
+  console.log("mail: ", mail);
+
+  // Verificar la configuración de la conexión
+  transporter.verify(function (error, success) {
+    if (error) {
+      console.log(error);
+    } else {
+      console.log("Server is ready to take our messages");
+    }
+  });
+
+  const token = Math.floor(100000 + Math.random() * 900000);
+
+  // Comprobar si ya existe un token para este usuario
+  const sqlCheckToken = `SELECT * FROM tokens WHERE mail = ?`;
+  db.query(sqlCheckToken, [mail], (err, result) => {
+    if (err) {
+      console.error("Error al comprobar el token:", err);
+      return res.status(500).json({ error: "Error" });
+    } else {
+      if (result.length > 0) {
+        // Ya existe un token, actualizarlo en lugar de insertarlo de nuevo
+        const sqlUpdateToken = `UPDATE tokens SET token = ? WHERE mail = ?`;
+        db.query(sqlUpdateToken, [token, mail], (err, result) => {
+          if (err) {
+            console.error("Error al actualizar el token:", err);
+            return res.status(500).json({ error: "Error" });
+          }
+        });
+      } else {
+        // No hay token existente, insertar uno nuevo
+        const sqlInsertToken = `INSERT INTO tokens (mail, token) VALUES (?, ?)`;
+        db.query(sqlInsertToken, [mail, token], (err, result) => {
+          if (err) {
+            console.error("Error al insertar el token:", err);
+            return res.status(500).json({ error: "Error" });
+          }
+        });
+      }
+
+      // Enviar el correo electrónico con el token
+      let mailOptions = {
+        from: "a22oscmungar@inspedralbes.cat",
+        to: mail,
+        subject: "Asunto del correo",
+        html: `Tu token es: ${token}`,
+      };
+
+      // Envía el correo electrónico
+      transporter.sendMail(mailOptions, (error, info) => {
+        if (error) {
+          console.log("Error al enviar el correo electrónico:", error);
+        } else {
+          console.log("Correo electrónico enviado:", info.response);
+        }
+      });
+
+      res.send(token.toString());
+    }
+  });
+});
+
+app.get("/checkToken", (req, res) => {
+  const mail = req.query.mail;
+  const token = req.query.token;
+
+  const sql = `SELECT * FROM TOKENS WHERE mail = ? AND token = ?`;
+  const values = [mail, token];
+
+  db.query(sql, values, (err, result) => {
+    if (err) {
+      console.error("Error en la consulta de inserción:", err);
+      return res.status(500).json({ error: "Error" });
+    } else {
+      console.log(result);
+      return res.json({ result });
+    }
+  });
+});
+
+app.post("/changePass",(req,res)=>{
+  const {mail,pass} = req.body;
+
+  let passCrypted = CryptoJS.MD5(pass).toString();
+
+  const sql = `UPDATE USUARIO SET pass = ? WHERE mailUsu = ?`;
+  const values = [passCrypted,mail];
+
+  db.query(sql,values,(err,result)=>{
+    if(err){
+      console.error("Error en la consulta de inserción:", err);
+      return res.status(500).json({ error: "Error al agregar el usuario" });
+    }else{
+      console.log(result);
+      return res.json({result});
+    }
+  });
+});
+
 // Ruta para obtener todos los usuarios dentro de un rango de distancia
 app.get("/users/nearby", (req, res) => {
   const currentLatitude = parseFloat(req.query.latitude);
@@ -124,7 +237,9 @@ app.get("/users/nearby", (req, res) => {
         M.descripcion, 
         M.relacionHumanos, 
         M.relacionMascotas,
-        M.raza
+        M.raza,
+        M.tamano,
+        M.terreno
     FROM USUARIO U
     LEFT JOIN MASCOTA M ON U.idUsu = M.idHumano
     WHERE U.idUsu <> ${idUsu}
@@ -152,10 +267,6 @@ app.get("/users/nearby", (req, res) => {
 
 // Ruta para agregar un nuevo usuario
 app.post("/users", upload.single("imagenFile"), (req, res) => {
-  console.log("Recibiendo solicitud POST en /users");
-
-  // Imprimir el cuerpo de la solicitud
-  console.log("Cuerpo de la solicitud:", req.body);
   const {
     name,
     latitude,
@@ -273,9 +384,14 @@ app.post("/socketUpdate", (req, res) => {
 app.get("/matches", (req, res) => {
   const idUsu = req.query.idUsu;
 
-  const sql = `SELECT U.*, M.* FROM USUARIO U JOIN MASCOTA M ON U.idUsu = M.idHumano
+  const sql = `SELECT U.*, M.* FROM USUARIO U 
+  JOIN MASCOTA M ON U.idUsu = M.idHumano
   JOIN INTERACCIONES I ON (U.idUsu = I.idUsu1 OR U.idUsu = I.idUsu2)
-  WHERE (I.idUsu1 = ${idUsu} OR I.idUsu2 = ${idUsu}) AND I.EsMatch = 1 AND U.idUsu <> ${idUsu}`;
+  WHERE (I.idUsu1 = ${idUsu} OR I.idUsu2 = ${idUsu}) 
+  AND I.EsMatch = 1 
+  AND U.idUsu <> ${idUsu} 
+  AND U.idUsu NOT IN (SELECT usuario_bloqueado_id FROM BLOQUEOS WHERE usuario_bloqueador_id = ${idUsu})`;
+
 
   db.query(sql, (err, result) => {
     if (err) {
@@ -292,6 +408,26 @@ app.get("/pass", (req, res) => {
 
   res.send(CryptoJS.MD5(pass).toString());
 });
+
+//ruta para bloquear a un usuario
+app.post("/bloquearUsuario",(req,res)=>{
+  const usuarioBloqueador = req.body.usuarioBloqueador;
+  const usuarioBloqueado = req.body.usuarioBloqueado;
+
+  // Insertar el registro de bloqueo en la tabla BLOQUEOS
+  const sql = "INSERT INTO BLOQUEOS (usuario_bloqueador_id, usuario_bloqueado_id) VALUES (?, ?)";
+  const values = [usuarioBloqueador, usuarioBloqueado];
+  
+  db.query(sql, values, (err, result) => {
+    if (err) {
+      console.error("Error al bloquear usuario:", err);
+      return res.status(500).json({ error: "Error al bloquear usuario" });
+    } else {
+      console.log("Usuario bloqueado con éxito.");
+      return res.status(200).json({ message: "Usuario bloqueado con éxito" });
+    }
+  });
+})
 
 app.post("/login", (req, res) => {
   const { mailUsu, passUsu } = req.body;
@@ -336,6 +472,8 @@ app.post("/login", (req, res) => {
           const relacionMascotas = result[0].relacionMascotas;
           const idHumano = result[0].idHumano;
           const raza = result[0].raza;
+          const tamano = result[0].tamano;
+          const terreno = result[0].terreno;
           res.json({
             idUsu,
             ubiUsu,
@@ -355,6 +493,8 @@ app.post("/login", (req, res) => {
             relacionMascotas,
             idHumano,
             raza,
+            tamano,
+            terreno,
           });
         }
       }
@@ -434,7 +574,7 @@ app.get("/interaccion", (req, res) => {
         // Si hay un cambio de 0 a 1, enviar el evento de socket
         if (esMatchActualizado === 1) {
           console.log("Match");
-        
+
           // Utiliza Promise.all para esperar las promesas antes de continuar
           Promise.all([socketUsuario(idUsu1), socketUsuario(idUsu2)])
             .then(([socketUsu1, socketUsu2]) => {
