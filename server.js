@@ -534,68 +534,58 @@ app.get("/users/validateMail", (req, res) => {
 app.get("/interaccion", (req, res) => {
   let { idUsu1, idUsu2, tipoInteraccion } = req.query;
 
-  // Asegurar que idUsu1 siempre sea menor o igual que idUsu2
-  [idUsu1, idUsu2] = [Math.min(idUsu1, idUsu2), Math.max(idUsu1, idUsu2)];
-
   console.log("idUsu1: ", idUsu1);
   console.log("idUsu2: ", idUsu2);
   console.log("tipoInteraccion: ", tipoInteraccion);
 
-  const sql = `
-    INSERT INTO INTERACCIONES (idUsu1, idUsu2, tipoInteraccion)
-    VALUES (?, ?, ?)
-    ON DUPLICATE KEY UPDATE 
-      EsMatch = IF(tipoInteraccion = 'LIKE' AND EsMatch = 0, 1, EsMatch);
-  `;
+  const checkMatch = `SELECT * FROM INTERACCIONES WHERE idUsu1 = ${idUsu2} AND idUsu2 = ${idUsu1}`;
 
-  const selectEsMatchSQL = `
-    SELECT EsMatch
-    FROM INTERACCIONES
-    WHERE idUsu1 = ? AND idUsu2 = ?;
-  `;
-
-  db.query(sql, [idUsu1, idUsu2, tipoInteraccion], (err, result) => {
+  db.query(checkMatch, (err, result) => {
     if (err) {
       console.error("Error en la consulta de inserción:", err);
       return res.status(500).json({ error: "Error al agregar el usuario" });
-    }
-
-    // Revisar si ha sido un "match"
-    db.query(selectEsMatchSQL, [idUsu1, idUsu2], (err, rows) => {
-      if (err) {
-        console.error("Error en la consulta de selección:", err);
-        return res.status(500).json({ error: "Error al verificar el match" });
-      }
-
-      if (rows.length > 0) {
-        console.log(rows[0]);
-        const esMatchActualizado = rows[0].EsMatch;
-
-        // Si hay un cambio de 0 a 1, enviar el evento de socket
-        if (esMatchActualizado === 1) {
-          console.log("Match");
-
-          // Utiliza Promise.all para esperar las promesas antes de continuar
+    } else {
+      if (result.length > 0) {
+        const hayMatch = `UPDATE INTERACCIONES SET EsMatch = 1 WHERE idUsu1 = ${idUsu2} AND idUsu2 = ${idUsu1}`;
+        db.query(hayMatch, (err, result) => {
+          if (err) {
+            console.error("Error en la consulta de inserción:", err);
+            return res.status(500).json({ error: "Error al agregar el usuario" });
+          } else {
+            console.log(result);
+            // Utiliza Promise.all para esperar las promesas antes de continuar
           Promise.all([socketUsuario(idUsu1), socketUsuario(idUsu2)])
-            .then(([socketUsu1, socketUsu2]) => {
-              if (socketUsu1 && socketUsu2) {
-                io.to(socketUsu1).emit("match");
-                io.to(socketUsu2).emit("match");
-                console.log("Se ha emitido el evento de match");
-              } else {
-                console.log("No se ha emitido el evento");
-              }
-            })
-            .catch((error) => {
-              console.error("Error al obtener sockets:", error);
-            });
-        }
-      }
+          .then(([socketUsu1, socketUsu2]) => {
+            if (socketUsu1 && socketUsu2) {
+              io.to(socketUsu1).emit("match");
+              io.to(socketUsu2).emit("match");
+              console.log("Se ha emitido el evento de match");
+            } else {
+              console.log("No se ha emitido el evento");
+            }
+          })
+          .catch((error) => {
+            console.error("Error al obtener sockets:", error);
+          });
+            return res.json({ result });
+          }
+        });
+      }else{
+        const noHabiaMatch = `INSERT INTO INTERACCIONES (idUsu1, idUsu2, tipoInteraccion) VALUES (${idUsu1}, ${idUsu2}, '${tipoInteraccion}')`;
 
-      // Respuesta exitosa
-      res.json({ result });
-    });
+        db.query(noHabiaMatch, (err, result) => {
+          if (err) {
+            console.error("Error en la consulta de inserción:", err);
+            return res.status(500).json({ error: "Error al agregar el usuario" });
+          } else {
+            console.log(result);
+            return res.json({ result });
+          }
+        });
+      }
+    }
   });
+
 });
 
 function socketUsuario(idUsu) {
