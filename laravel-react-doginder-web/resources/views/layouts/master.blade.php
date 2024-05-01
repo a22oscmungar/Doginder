@@ -11,7 +11,7 @@
     <!-- <link rel="icon" type="image/x-icon" href="{{ Vite::asset('resources/images/favicon.ico') }}"> -->
     <!-- <link rel="stylesheet" href="{{ mix('css/app.scss') }}"> -->
 
-   @vite(['resources/css/app.scss', 'resources/js/app.js'])
+    @vite(['resources/css/app.scss', 'resources/js/app.js'])
 </head>
 
 <body>
