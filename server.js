@@ -226,6 +226,7 @@ app.get("/users/nearby", (req, res) => {
         U.genero,
         U.edadUsu,
         U.ubiUsu,
+        U.imgProfile,
         ST_X(U.ubiUsu) AS latitude, 
         ST_Y(U.ubiUsu) AS longitude,
         ST_DISTANCE_SPHERE(U.ubiUsu, ST_GeomFromText('POINT(${currentLongitude} ${currentLatitude})', 4326))/1000 AS distance,
@@ -283,6 +284,7 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
     petDescription,
     petFriendlyPets,
     petFriendlyPeople,
+    imgProfile,
   } = req.body;
 
   if (
@@ -300,7 +302,8 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
     !petBreed ||
     !petDescription ||
     !petFriendlyPets ||
-    !petFriendlyPeople
+    !petFriendlyPeople ||
+    !imgProfile
   ) {
     console.log("Faltan datos obligatorios");
     return res.status(400).json({ error: "Faltan datos obligatorios" });
@@ -309,14 +312,15 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
 
   const location = `POINT(${longitude} ${latitude})`;
   const imageUrl = req.file ? `/uploads/${req.file.filename}` : null; // Ruta de la imagen en el servidor
+  const imageProfileUrl = req.file ? `/uploads/${req.file.filename}` : null; // Ruta de la imagen en el servidor
 
   console.log("Ubicación:", location);
   console.log("Imagen:", imageUrl);
 
   const query = `
-    INSERT INTO USUARIO (nombreUsu, ubiUsu, apellidosUsu, mailUsu, pass, genero, edadUsu) VALUES (?, ST_GeomFromText(?), (?), (?), ?, ?, ?)
+    INSERT INTO USUARIO (nombreUsu, ubiUsu, apellidosUsu, mailUsu, pass, genero, edadUsu, imgProfile) VALUES (?, ST_GeomFromText(?), (?), (?), ?, ?, ?)
 `;
-  const values = [name, location, surname, mailUsu, passCrypto, gender, age];
+  const values = [name, location, surname, mailUsu, passCrypto, gender, age, imageProfileUrl];
 
   db.query(query, values, (err, result) => {
     if (err) {
@@ -474,6 +478,7 @@ app.post("/login", (req, res) => {
           const raza = result[0].raza;
           const tamano = result[0].tamano;
           const terreno = result[0].terreno;
+          const imgProfile = result[0].imgProfile;
           res.json({
             idUsu,
             ubiUsu,
@@ -495,6 +500,7 @@ app.post("/login", (req, res) => {
             raza,
             tamano,
             terreno,
+            imgProfile,
           });
         }
       }
@@ -559,6 +565,7 @@ app.get("/interaccion", (req, res) => {
             if (socketUsu1 && socketUsu2) {
               io.to(socketUsu1).emit("match");
               io.to(socketUsu2).emit("match");
+              console.log(`SocketId1: ${socketUsu1}, SocketId2: ${socketUsu2}`);
               console.log("Se ha emitido el evento de match");
             } else {
               console.log("No se ha emitido el evento");
