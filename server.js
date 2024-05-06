@@ -185,21 +185,21 @@ app.get("/checkToken", (req, res) => {
   });
 });
 
-app.post("/changePass",(req,res)=>{
-  const {mail,pass} = req.body;
+app.post("/changePass", (req, res) => {
+  const { mail, pass } = req.body;
 
   let passCrypted = CryptoJS.MD5(pass).toString();
 
   const sql = `UPDATE USUARIO SET pass = ? WHERE mailUsu = ?`;
-  const values = [passCrypted,mail];
+  const values = [passCrypted, mail];
 
-  db.query(sql,values,(err,result)=>{
-    if(err){
+  db.query(sql, values, (err, result) => {
+    if (err) {
       console.error("Error en la consulta de inserción:", err);
       return res.status(500).json({ error: "Error al agregar el usuario" });
-    }else{
+    } else {
       console.log(result);
-      return res.json({result});
+      return res.json({ result });
     }
   });
 });
@@ -266,8 +266,11 @@ app.get("/users/nearby", (req, res) => {
   });
 });
 
-// Ruta para agregar un nuevo usuario
-app.post("/users", upload.single("imagenFile"), (req, res) => {
+// Ruta para registrar un nuevo usuario
+app.post("/users", upload.fields([
+  { name: "imgProfile", maxCount: 1 },
+  { name: "imgPerfilFile", maxCount: 1 },
+]), (req, res) => {
   const {
     name,
     latitude,
@@ -285,6 +288,7 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
     petFriendlyPets,
     petFriendlyPeople,
     imgProfile,
+    
   } = req.body;
 
   if (
@@ -311,8 +315,8 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
   const passCrypto = CryptoJS.MD5(pass).toString();
 
   const location = `POINT(${longitude} ${latitude})`;
-  const imageUrl = req.file ? `/uploads/${req.file.filename}` : null; // Ruta de la imagen en el servidor
-  const imageProfileUrl = req.file ? `/uploads/${req.file.filename}` : null; // Ruta de la imagen en el servidor
+  const imagenFile = req.files['imagenFile'][0]; // Imagen del usuario
+  const imagenPerfilFile = req.files['imagenPerfilFile'][0]; // Imagen del perfil
 
   console.log("Ubicación:", location);
   console.log("Imagen:", imageUrl);
@@ -320,7 +324,16 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
   const query = `
     INSERT INTO USUARIO (nombreUsu, ubiUsu, apellidosUsu, mailUsu, pass, genero, edadUsu, imgProfile) VALUES (?, ST_GeomFromText(?), (?), (?), ?, ?, ?)
 `;
-  const values = [name, location, surname, mailUsu, passCrypto, gender, age, imageProfileUrl];
+  const values = [
+    name,
+    location,
+    surname,
+    mailUsu,
+    passCrypto,
+    gender,
+    age,
+    imagenPerfilFile,
+  ];
 
   db.query(query, values, (err, result) => {
     if (err) {
@@ -334,7 +347,7 @@ app.post("/users", upload.single("imagenFile"), (req, res) => {
         petName,
         petAge,
         petGender,
-        imageUrl,
+        imagenFile,
         petDescription,
         petFriendlyPeople,
         petFriendlyPets,
@@ -396,7 +409,6 @@ app.get("/matches", (req, res) => {
   AND U.idUsu <> ${idUsu} 
   AND U.idUsu NOT IN (SELECT usuario_bloqueado_id FROM BLOQUEOS WHERE usuario_bloqueador_id = ${idUsu})`;
 
-
   db.query(sql, (err, result) => {
     if (err) {
       console.error("Error en la consulta de inserción:", err);
@@ -414,14 +426,15 @@ app.get("/pass", (req, res) => {
 });
 
 //ruta para bloquear a un usuario
-app.post("/bloquearUsuario",(req,res)=>{
+app.post("/bloquearUsuario", (req, res) => {
   const usuarioBloqueador = req.body.usuarioBloqueador;
   const usuarioBloqueado = req.body.usuarioBloqueado;
 
   // Insertar el registro de bloqueo en la tabla BLOQUEOS
-  const sql = "INSERT INTO BLOQUEOS (usuario_bloqueador_id, usuario_bloqueado_id) VALUES (?, ?)";
+  const sql =
+    "INSERT INTO BLOQUEOS (usuario_bloqueador_id, usuario_bloqueado_id) VALUES (?, ?)";
   const values = [usuarioBloqueador, usuarioBloqueado];
-  
+
   db.query(sql, values, (err, result) => {
     if (err) {
       console.error("Error al bloquear usuario:", err);
@@ -431,7 +444,7 @@ app.post("/bloquearUsuario",(req,res)=>{
       return res.status(200).json({ message: "Usuario bloqueado con éxito" });
     }
   });
-})
+});
 
 app.post("/login", (req, res) => {
   const { mailUsu, passUsu } = req.body;
@@ -556,34 +569,40 @@ app.get("/interaccion", (req, res) => {
         db.query(hayMatch, (err, result) => {
           if (err) {
             console.error("Error en la consulta de inserción:", err);
-            return res.status(500).json({ error: "Error al agregar el usuario" });
+            return res
+              .status(500)
+              .json({ error: "Error al agregar el usuario" });
           } else {
             console.log(result);
             // Utiliza Promise.all para esperar las promesas antes de continuar
-          Promise.all([socketUsuario(idUsu1), socketUsuario(idUsu2)])
-          .then(([socketUsu1, socketUsu2]) => {
-            if (socketUsu1 && socketUsu2) {
-              io.to(socketUsu1).emit("match");
-              io.to(socketUsu2).emit("match");
-              console.log(`SocketId1: ${socketUsu1}, SocketId2: ${socketUsu2}`);
-              console.log("Se ha emitido el evento de match");
-            } else {
-              console.log("No se ha emitido el evento");
-            }
-          })
-          .catch((error) => {
-            console.error("Error al obtener sockets:", error);
-          });
+            Promise.all([socketUsuario(idUsu1), socketUsuario(idUsu2)])
+              .then(([socketUsu1, socketUsu2]) => {
+                if (socketUsu1 && socketUsu2) {
+                  io.to(socketUsu1).emit("match");
+                  io.to(socketUsu2).emit("match");
+                  console.log(
+                    `SocketId1: ${socketUsu1}, SocketId2: ${socketUsu2}`
+                  );
+                  console.log("Se ha emitido el evento de match");
+                } else {
+                  console.log("No se ha emitido el evento");
+                }
+              })
+              .catch((error) => {
+                console.error("Error al obtener sockets:", error);
+              });
             return res.json({ result });
           }
         });
-      }else{
+      } else {
         const noHabiaMatch = `INSERT INTO INTERACCIONES (idUsu1, idUsu2, tipoInteraccion) VALUES (${idUsu1}, ${idUsu2}, '${tipoInteraccion}')`;
 
         db.query(noHabiaMatch, (err, result) => {
           if (err) {
             console.error("Error en la consulta de inserción:", err);
-            return res.status(500).json({ error: "Error al agregar el usuario" });
+            return res
+              .status(500)
+              .json({ error: "Error al agregar el usuario" });
           } else {
             console.log(result);
             return res.json({ result });
@@ -592,7 +611,6 @@ app.get("/interaccion", (req, res) => {
       }
     }
   });
-
 });
 
 function socketUsuario(idUsu) {
@@ -614,6 +632,7 @@ function socketUsuario(idUsu) {
   });
 }
 
+//ruta para cambiar rapido la contrasweña
 app.post("/setPass", (req, res) => {
   const newPass = req.body.newPass;
   const usu = req.body.usu;
@@ -634,6 +653,7 @@ app.post("/setPass", (req, res) => {
   });
 });
 
+//ruta para obtener la contraseña
 app.get("/getPass", (req, res) => {
   const usu = req.query.usu;
 
@@ -644,6 +664,29 @@ app.get("/getPass", (req, res) => {
     if (err) {
       console.error("Error en la consulta de inserción:", err);
       return res.status(500).json({ error: "Error al agregar el usuario" });
+    } else {
+      console.log(result);
+      return res.json({ result });
+    }
+  });
+});
+
+//ruta para obtener los usuarios a los que has dado que no
+app.get("/getNo", (req, res) => {
+  const idUsu = req.query.idUsu;
+
+  const query = `
+  SELECT USUARIO.*, MASCOTA.*
+  FROM INTERACCIONES
+  JOIN USUARIO ON INTERACCIONES.idUsu2 = USUARIO.idUsu
+  JOIN MASCOTA ON USUARIO.idUsu = MASCOTA.idHumano
+  WHERE INTERACCIONES.idUsu1 = ${idUsu}
+  AND INTERACCIONES.tipoInteraccion = "DISLIKE"
+`;
+  db.query(query, (err, result) => {
+    if (err) {
+      console.error("Error en la consulta de inserción:", err);
+      return res.status(500).json({ error: "Error al obtener los dislikes" });
     } else {
       console.log(result);
       return res.json({ result });
