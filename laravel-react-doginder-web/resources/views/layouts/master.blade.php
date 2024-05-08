@@ -15,9 +15,9 @@
 </head>
 
 <body>
-    <div class="min-h-screen flex flex-col pointer-events-auto">
+<div class="min-h-screen flex flex-col">
         @include('layouts.header')
-        <main>
+        <main class="flex-grow">
             @yield('content')
         </main>
         @include('layouts.footer')
