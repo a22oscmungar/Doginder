@@ -39,7 +39,6 @@ const db = mysql.createPool({
   user: "a22oscmungar_doginder",
   password: "Doginder2023",
   database: "a22oscmungar_doginder",
-  connectionLimit: 2000,
 });
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -188,15 +187,12 @@ app.get("/users/nearbyAll", async (req, res) => {
 });
 
 // Ruta para registrar un nuevo usuario
-app.post(
-  "/users",
-  upload.fields([
-    { name: "imgProfile", maxCount: 1 },
-    { name: "imgPerfilFile", maxCount: 1 },
+app.post("/users",  upload.fields([{ name: "imgProfile", maxCount: 1 },{ name: "imgPerfilFile", maxCount: 1 },
   ]),
   async (req, res) => {
     try {
       const result = await createUser(req);
+      console.log(result);
       res.json(result);
     } catch (error) {
       res.status(500).json(error);
