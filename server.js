@@ -107,6 +107,10 @@ function emitir_evento(socketId, tipoInteraccion) {
 
 global.emitir_evento = emitir_evento;
 
+app.get("/", (req, res) => {
+  res.send("Bienvenido a Doginder, digo, guau! 🐶");
+});
+
 // Ruta para enviar el correo con el token
 app.post("/sendMail", async (req, res) => {
   const mail = req.body.mail;

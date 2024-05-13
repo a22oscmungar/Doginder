@@ -228,7 +228,8 @@ function findNearbyUsers(
             M.descripcion, 
             M.relacionHumanos, 
             M.relacionMascotas,
-            M.raza
+            M.raza,
+            M.tamano
         FROM USUARIO U
         LEFT JOIN MASCOTA M ON U.idUsu = M.idHumano
         WHERE U.idUsu <> ${idUsu}
