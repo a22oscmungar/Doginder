@@ -10,12 +10,14 @@
     <title>@yield('title')</title>
     <!-- <link rel="icon" type="image/x-icon" href="{{ Vite::asset('resources/images/favicon.ico') }}"> -->
     <!-- <link rel="stylesheet" href="{{ mix('css/app.scss') }}"> -->
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
 
     @vite(['resources/css/app.scss', 'resources/js/app.js'])
 </head>
 
 <body>
-<div class="min-h-screen flex flex-col">
+<div class="min-h-screen flex flex-col overflow-x-hidden">
         @include('layouts.header')
         <main class="flex-grow">
             @yield('content')

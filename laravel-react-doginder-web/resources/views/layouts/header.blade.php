@@ -29,23 +29,20 @@
             </div>
             <div class="hidden justify-between items-center w-full lg:flex lg:w-auto lg:order-1" id="nav-menu">
                 <ul class="flex flex-col mt-4 font-medium lg:flex-row align-center lg:space-x-6 xl:space-x-8 lg:mt-0 divide-y lg:divide-y-0">
-                    {{-- <li>
-                        <a href="{{ url('/') }}" class="block py-2 hover:text-primary lg:p-0 text-primary">{{ __('header.menu.home') }}</a>
-                    </li> --}}
                     <li>
-                        <a href="/" class="block py-2 hover:text-primary lg:p-0 text-gray-700">Inicio</a>
+                        <a href="#home" class="block py-2 hover:text-primary lg:p-0 text-gray-700">Inicio</a>
                     </li>
                     <li>
-                        <a href="/" class="block py-2 hover:text-primary lg:p-0 text-gray-700">Opiniones</a>
+                        <a href="#opinions" class="block py-2 hover:text-primary lg:p-0 text-gray-700">Opiniones</a>
                     </li>
                     <li>
-                        <a href="/" class="block py-2 hover:text-primary lg:p-0 text-gray-700">Anuncio</a>
+                        <a href="#comercial" class="block py-2 hover:text-primary lg:p-0 text-gray-700">Anuncio</a>
                     </li>
                     <li>
-                        <a href="/" class="block py-2 hover:text-primary lg:p-0 text-gray-700">Uso</a>
+                        <a href="#use" class="block py-2 hover:text-primary lg:p-0 text-gray-700">Uso</a>
                     </li>
                     <li>
-                        <a href="/" class="block py-2 hover:text-primary lg:p-0 text-gray-700">Contacto</a>
+                        <a href="#download" class="block py-2 hover:text-primary lg:p-0 text-gray-700">Contacto</a>
                     </li>
                 </ul>
             </div>
