@@ -4,12 +4,12 @@
 
 @section('content')
 <section class="container mx-auto px-4" id="home">
-    <div class="flex flex-col lg_flex-row">
-        <div class="flex justify-center items-center mx-auto pb-4 lg:w-1/2">
+    <div class="flex flex-col lg:flex-row">
+        <div class="flex justify-center items-center mx-auto pb-4 lg:w-1/2 lg:justify-end ">
             <h1 class="text-center text-4xl lg:text-6xl lg:text-left font-bold lg:max-w-[500px] leading-snug">La app que
                 tu perro te hará descargar</h1>
         </div>
-        <div class="flex justify-center lg:justify-end lg:w-3/4 ">
+        <div class="flex justify-center lg:w-1/2 ">
             <img src="{{ Vite::asset('resources/images/mobile-profile.png') }}" width="253" height="506" alt="Doginder"
                 class="max-w-[506px] max-h-[710px] shrink-0">
             <!-- <img class="relative top-4 right-5 rotate-90" src="{{ Vite::asset('resources/images/dog-mobile.png') }}" width="120" height="120" alt="Doginder"> -->
@@ -17,39 +17,106 @@
     </div>
 </section>
 <section class="bg-orange-300 " id="opinions">
-    <div class="space-y-5 mx-2 py-5 [&>*]:flex [&>*]:flex-col [&>*]:justify-center [&>*]:items-center [&>*]:text-center [&>*]:bg-orange-200 [&>*]:p-5 [&>*]:rounded-lg">
+    <div
+        class="space-y-5 mx-2 py-5 [&>*]:flex [&>*]:flex-col [&>*]:justify-center [&>*]:items-center [&>*]:text-center [&>*]:bg-orange-200 [&>*]:p-5 [&>*]:rounded-lg lg:flex lg:flex-row">
         <div>
             <img src="{{ Vite::asset('resources/images/lenin.jpg') }}" width="100px" height="100px" alt="Doginder"
                 class="rounded-full mb-2">
-            <p class="italic text-gray-800">¡Antes éramos un humano y un perro, ahora somos dos humanos y dos perros!</p>
+            <p class="italic text-gray-800">¡Antes éramos un humano y un perro, ahora somos dos humanos y dos perros!
+            </p>
+            <div class="flex">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+
+                <img src="{{ Vite::asset('resources/images/icon_bone_empty.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+            </div>
         </div>
         <div>
             <img src="{{ Vite::asset('resources/images/coco.png') }}" width="100px" height="100px" alt="Doginder"
                 class="rounded-full mb-2">
             <p class="italic">Me hago pipi de la emoción al saber que tengo compañía para pasear</p>
+            <div class="flex">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+            </div>
         </div>
         <div>
             <img src="{{ Vite::asset('resources/images/anuk.jpg') }}" width="100px" height="100px" alt="Doginder"
                 class="rounded-full mb-2">
             <p class="italic">He aprendido a compartir mis juguetes con mis nuevos amigos</p>
+            <div class="flex">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+            </div>
         </div>
         <div>
             <img src="{{ Vite::asset('resources/images/flama.jpg') }}" width="100px" height="100px" alt="Doginder"
                 class="rounded-full mb-2">
             <p class="italic">Ahora tengo tantos amigos que me faltan patas para contarlos</p>
+            <div class="flex">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+
+                <img src="{{ Vite::asset('resources/images/icon_bone_empty.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+            </div>
         </div>
         <div>
             <img src="{{ Vite::asset('resources/images/koke.jpg') }}" width="100px" height="100px" alt="Doginder"
                 class="rounded-full mb-2">
             <p class="italic">Ahora ladro más, ¡pero de felicidad!</p>
+            <div class="flex">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+
+                <img src="{{ Vite::asset('resources/images/icon_bone_full.svg') }}" width="20px" height="20px"
+                    alt="Doginder">
+            </div>
         </div>
     </div>
 </section>
 <section id="comercial">
     <div class="flex flex-col justify-center items-center text-center p-5">
-        <p class="text-3xl font-medium">Anuncio</p>
+        <p class="text-3xl font-medium lg:pb-3">Anuncio</p>
 
-        <video class="w-full rounded-lg" controls>
+        <video class="w-full rounded-lg lg:w-[700px]" controls>
             <source src="{{ Vite::asset('resources/images/AnuncioDoginder.mp4') }}" type="video/mp4">
             Your browser does not support the video tag.
         </video>
