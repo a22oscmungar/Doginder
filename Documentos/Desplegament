@@ -1,0 +1,5 @@
+Pel que fa a l'aplicació només és necessari instal·lar l'APK al teu dispositiu Android. En quant al servidor s'ha desplegat a la plataforma de hosting "Digital Ocean".
+Un cop creat el droplet amb els requisitis de hardware que necessita el nostre servidor, clonarem el nostre proyecte a la consola virtual i el desplegarem amb "node server.js". 
+Ja que tenim comprat el domini "doginder.es" hem redirigit el droplet al DNS del nostre domini, per tal d'accedir al servidor i per tant a la pàgina web amb la nostra direcció.
+Pel que fa a la base de dades farem servir temporalment el portal de PHPMYADMIN que ens proporciona el servidor, però més endevant desplegarem un altre droplet a DigitalOcean a on migrarem
+la base de dades.
