@@ -8,9 +8,10 @@ import.meta.glob([
 
 
 var swiper = new Swiper('.swiper-container', {
-  slidesPerView: 1.5,
-  spaceBetween: 10,
-  navigation: false,
+  slidesPerView: 1,
+  spaceBetween: 40,
+  width: 400,
+  height: 500
 });
 
 const navButton = document.getElementById('nav-button');

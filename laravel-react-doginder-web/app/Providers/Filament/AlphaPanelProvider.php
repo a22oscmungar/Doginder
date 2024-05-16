@@ -25,7 +25,7 @@ class AlphaPanelProvider extends PanelProvider
         return $panel
             ->default()
             ->id('alpha')
-            ->path('alpha')
+            ->path('admin')
             ->login()
             ->colors([
                 'primary' => Color::Amber,
