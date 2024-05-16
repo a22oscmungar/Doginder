@@ -2,9 +2,12 @@
 
 namespace App\Filament\Resources;
 
-use App\Filament\Resources\BloqueosResource\Pages;
-use App\Filament\Resources\BloqueosResource\RelationManagers;
-use App\Models\Bloqueos;
+
+use Filament\Resources\Forms\Components;
+
+use App\Filament\Resources\UsuariosResource\Pages;
+use App\Filament\Resources\UsuariosResource\RelationManagers;
+use App\Models\Usuarios;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -14,9 +17,9 @@ use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
-class BloqueosResource extends Resource
+class UsuariosResource extends Resource
 {
-    protected static ?string $model = Bloqueos::class;
+    protected static ?string $model = Usuarios::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
 
@@ -24,25 +27,29 @@ class BloqueosResource extends Resource
     {
         return $form
             ->schema([
-                //
-            ]);
+                Forms\Components\TextInput::make('idUsu')
+                    ->disabled() // Disable this if you don't want it to be editable
+                    ->label('ID Usuario'),
+
+                    Forms\Components\TextInput::make('bloqueado')
+                    ->label('Bloqueado'),
+            ])
+           ;
     }
 
     public static function table(Table $table): Table
     {
         return $table
-            ->query(Bloqueos::query())
+            ->query(Usuarios::query())
             ->columns([
-                TextColumn::make('id')->label('Id'),
-                TextColumn::make('usuario_bloqueador_id')->label('Usuario'),
-                TextColumn::make('usuario_bloqueado_id')->label('Usuario bloqueado'),
-                TextColumn::make('fecha_bloqueo')->label('Fecha bloqueo'),
+                TextColumn::make('idUsu')->label('idUsu ')->searchable(),
+                TextColumn::make('bloqueado')->label('Bloqueado'),
             ])
             ->filters([
                 //
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
+               // Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
@@ -61,9 +68,9 @@ class BloqueosResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListBloqueos::route('/'),
-            'create' => Pages\CreateBloqueos::route('/create'),
-            'edit' => Pages\EditBloqueos::route('/{record}/edit'),
+            'index' => Pages\ListUsuarios::route('/'),
+            'create' => Pages\CreateUsuarios::route('/create'),
+            'edit' => Pages\EditUsuarios::route('/{record}/edit'),
         ];
     }
 }

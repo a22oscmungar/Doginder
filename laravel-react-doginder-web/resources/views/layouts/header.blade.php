@@ -2,7 +2,7 @@
     <nav class="container-fluid p-8">
         <div class="flex flex-wrap lg:flex-nowrap justify-between items-center">
             <a href="/" class="flex items-center">
-                <img src="{{ Vite::asset('resources/images/logo_doginder.png') }}" class="ml-4 h-7 lg:h-9" alt="Doginder Logo" />
+                <img src="{{ Vite::asset('resources/images/logo_doginder.png') }}" width="120" height="90" class="ml-4 lg:w-36 lg:h-9" alt="Doginder Logo" />
             </a>
             <div class="flex items-center lg:order-2">
                 <a href="tel:931596006" class="font-medium mr-2 sm:mr-3 lg:mr-6 flex items-center">
