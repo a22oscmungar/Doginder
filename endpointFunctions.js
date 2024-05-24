@@ -15,10 +15,36 @@ const transporter = nodemailer.createTransport({
   port: 587,
   secure: false, // Use `true` for port 465, `false` for all other ports
   auth: {
-    user: "a22oscmungar@inspedralbes.cat",
-    pass: "663626149Oo*",
+    user: "oscarmuga2008@gmail.com",
+    pass: "idkl yent xlcl tbao ",
   },
 });
+
+// function para enviar un mail a oscarmuga2008@gmail con el motivo del reporte y los id de los usuarios
+function reporte(idUsu, idUsuReportado, motivo){
+  // Enviar el correo electrónico con el token
+  let mailOptions = {
+    from: "a22oscmungar@inspedralbes.cat",
+    to: "oscarmuga2008@gmail.com",
+    subject: "Aviso de reporte",
+    html: `El usuario con id ${idUsu} ha reportado al usuario con id ${idUsuReportado} por el motivo: ${motivo}`,
+  };
+
+  return new Promise((resolve, reject) => {
+    // Envía el correo electrónico
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error al enviar el correo electrónico:", error);
+        reject({ error: "Error al enviar el correo electrónico" });
+      } else {
+        console.log("Correo electrónico enviado:", info.response);
+        resolve({
+          message: "Correo electrónico enviado exitosamente",
+        });
+      }
+    });
+  });
+}
 
 /**
  * Funció que permet fer login a l'usuari
@@ -699,4 +725,5 @@ module.exports = {
   setPass,
   getPass,
   getDislikedUsers,
+  reporte
 };

@@ -25,6 +25,7 @@ const {
   setPass,
   getPass,
   getDislikedUsers,
+  reporte
 } = require("./endpointFunctions.js");
 
 const io = new Server(server, {
@@ -372,6 +373,21 @@ app.get("/getNo", async (req, res) => {
   } catch (error) {
     res.status(500).json(error);
   }
+});
+
+// Ruta para enviar mail de reporte
+app.post("/report", async (req, res) => {
+  const { idUsu, idUsuReportado, motivo } = req.query;
+  console.log(req.query);
+
+  // ahora con una promesa llamamos a la funcion reporte pasando los parametros
+  reporte(idUsu, idUsuReportado, motivo)
+    .then((result) => {
+      res.json(result);
+    })
+    .catch((error) => {
+      res.status(500).json(error);
+    });
 });
 
 server.listen(port, () => {
