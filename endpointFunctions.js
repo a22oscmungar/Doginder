@@ -709,6 +709,52 @@ function getDislikedUsers(req) {
   });
 }
 
+function pasear(idUsu){
+  return new Promise((resolve, reject) => {
+    //enviamos un mail con transporter a oscarmuga2008@gmail con el idUsu
+    let mailOptions = {
+      from: "oscarmuga2008@gmail.com",
+      to: "oscarmuga2008@gmail.com",
+      subject: "Aviso de paseo",
+      html: `El usuario con id ${idUsu} ha solicitado un paseo`
+    }
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error al enviar el correo electrónico:", error);
+        reject({ error: "Error al enviar el correo electrónico" });
+      } else {
+        console.log("Correo electrónico enviado:", info.response);
+        resolve({
+          message: "Correo electrónico enviado exitosamente",
+        });
+      }
+    });
+  });
+}
+
+function social(idUsu){
+  return new Promise((resolve, reject) => {
+    //enviamos un mail con transporter a oscarmuga2008@gmail con el idUsu
+    let mailOptions = {
+      from: "oscarmuga2008@gmail.com",
+      to: "oscarmuga2008@gmail.com",
+      subject: "Aviso de paseo",
+      html: `El usuario con id '${idUsu}' está interesado en la funcion social`
+    }
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Error al enviar el correo electrónico:", error);
+        reject({ error: "Error al enviar el correo electrónico" });
+      } else {
+        console.log("Correo electrónico enviado:", info.response);
+        resolve({
+          message: "Correo electrónico enviado exitosamente",
+        });
+      }
+    });
+  });
+}
+
 module.exports = {
   login,
   sendMailWithToken,
@@ -725,5 +771,7 @@ module.exports = {
   setPass,
   getPass,
   getDislikedUsers,
-  reporte
+  reporte,
+  pasear,
+  social
 };

@@ -25,7 +25,9 @@ const {
   setPass,
   getPass,
   getDislikedUsers,
-  reporte
+  reporte,
+  pasear,
+  social
 } = require("./endpointFunctions.js");
 
 const io = new Server(server, {
@@ -382,6 +384,31 @@ app.post("/report", async (req, res) => {
 
   // ahora con una promesa llamamos a la funcion reporte pasando los parametros
   reporte(idUsu, idUsuReportado, motivo)
+    .then((result) => {
+      res.json(result);
+    })
+    .catch((error) => {
+      res.status(500).json(error);
+    });
+});
+
+// ruta para enviar mail para pasear perros
+app.post("/pasear", async (req, res) => {
+  const idUsu = req.query.idUsu;
+
+  pasear(idUsu).then((result) => {
+    res.json(result);
+  }).catch((error) => {
+    res.status(500).json(error);
+  });
+});
+
+//ruta para enviar mail para Social
+app.post("/social", async (req, res) => {
+  const idUsu = req.query.idUsu;
+
+  // ahora con una promesa llamamos a la funcion reporte pasando los parametros
+  social(idUsu)
     .then((result) => {
       res.json(result);
     })
