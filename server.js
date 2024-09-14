@@ -27,7 +27,8 @@ const {
   getDislikedUsers,
   reporte,
   pasear,
-  social
+  social,
+  findUsersFilter,
 } = require("./endpointFunctions.js");
 
 const io = new Server(server, {
@@ -114,25 +115,26 @@ app.get("/", (req, res) => {
   res.send("Bienvenido a Doginder, digo, guau! 🐶");
 });
 
+app.get("/users", (req, res) => {
+  const sql = "SELECT * FROM USUARIO";
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("Error en la consulta:", err);
+      return res.status(500).json({ error: "Error al obtener los usuarios" });
+    } else {
+      return res.json(result);
+    }
+  });
+});
+
+
+
 // Ruta para enviar el correo con el token
 app.post("/sendMail", async (req, res) => {
   const mail = req.body.mail;
 
   try {
     const result = await sendMailWithToken(mail, db);
-    res.json(result);
-  } catch (error) {
-    res.status(500).json(error);
-  }
-});
-
-// Ruta para verificar el token
-app.get("/checkToken", async (req, res) => {
-  const mail = req.query.mail;
-  const token = req.query.token;
-
-  try {
-    const result = await checkToken(mail, token, db);
     res.json(result);
   } catch (error) {
     res.status(500).json(error);
@@ -171,6 +173,35 @@ app.get("/users/nearby", async (req, res) => {
     res.status(500).json(error);
   }
 });
+
+app.get("/users/nearbyFilter", async (req, res) => {
+  const currentLatitude = parseFloat(req.query.latitude);
+  const currentLongitude = parseFloat(req.query.longitude);
+  const radiusInKm = parseFloat(req.query.radius) || 10.0; // Por defecto 10 km
+  const idUsu = req.query.idUsu;
+  const edadMin = req.query.edadMin || 18;
+  const edadMax = req.query.edadMax || 99;
+
+  // Filtro de género (puede estar vacío)
+  const genero = req.query.genero || null;
+
+  try {
+    const results = await findUsersFilter(
+      currentLatitude,
+      currentLongitude,
+      radiusInKm,
+      idUsu,
+      genero,
+      db,
+      edadMin,
+      edadMax
+    );
+    res.json(results);
+  } catch (error) {
+    res.status(500).json(error);
+  }
+});
+
 
 // Ruta para buscar todos los usuarios dentro de un rango de distancia
 app.get("/users/nearbyAll", async (req, res) => {

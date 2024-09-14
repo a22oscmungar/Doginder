@@ -279,6 +279,76 @@ function findNearbyUsers(
   });
 }
 
+function findUsersFilter(
+  currentLatitude,
+  currentLongitude,
+  radiusInKm,
+  idUsu,
+  genero,
+  db,
+  edadMin,
+  edadMax
+) {
+  return new Promise((resolve, reject) => {
+    // Parte opcional para el género
+    let generoFilter = '';
+    if (genero) {
+      generoFilter = `AND U.genero = '${genero}'`;
+    }
+
+    // Consulta SQL con el filtro de género opcional
+    const query = `
+        SELECT 
+            U.idUsu, 
+            U.nombreUsu, 
+            U.apellidosUsu,
+            U.mailUsu,
+            U.pass,
+            U.genero,
+            U.edadUsu,
+            U.ubiUsu,
+            U.imgProfile,
+            ST_X(U.ubiUsu) AS latitude, 
+            ST_Y(U.ubiUsu) AS longitude,
+            ST_DISTANCE_SPHERE(U.ubiUsu, ST_GeomFromText('POINT(${currentLongitude} ${currentLatitude})', 4326))/1000 AS distance,
+            M.mascotaId,
+            M.nombre, 
+            M.edad,
+            M.sexo, 
+            M.foto, 
+            M.descripcion, 
+            M.relacionHumanos, 
+            M.relacionMascotas,
+            M.raza,
+            M.tamano
+        FROM USUARIO U
+        LEFT JOIN MASCOTA M ON U.idUsu = M.idHumano
+        WHERE U.idUsu <> ${idUsu}
+        AND NOT EXISTS (
+          SELECT 1 FROM INTERACCIONES 
+          WHERE (idUsu1 = ${idUsu} AND idUsu2 = U.idUsu)
+             OR (idUsu1 = ${idUsu} AND idUsu2 = U.idUsu AND EsMatch = 1)
+             OR (idUsu1 = U.idUsu AND idUsu2 = ${idUsu} AND EsMatch = 1)
+        )
+        ${generoFilter} 
+        
+        AND TIMESTAMPDIFF(YEAR, U.edadUsu, CURDATE()) BETWEEN ${edadMin} AND ${edadMax}
+
+        HAVING distance <= ${radiusInKm} 
+      `;
+
+    db.query(query, (err, results) => {
+      if (err) {
+        console.error("Error en la consulta de usuarios cercanos:", err);
+        reject({ error: "Error en la consulta de usuarios cercanos" });
+      } else {
+        console.log(`Edad mínima: ${edadMin}, Edad máxima: ${edadMax}, Género: ${genero}, Distancia: ${radiusInKm}`);
+        console.log(results);
+        resolve(results);
+      }
+    });
+  });
+}
 /**
  * Funció que permet trobar tots els usuaris propers a l'usuari actual dins d'un radi determinat (sense comprovar dislikes)
  * @param {any} currentLatitude
@@ -773,5 +843,6 @@ module.exports = {
   getDislikedUsers,
   reporte,
   pasear,
-  social
+  social,
+  findUsersFilter
 };
